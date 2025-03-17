@@ -7,22 +7,25 @@ using namespace std;
 
 class Grid {
     private:
+        int    rows, cols, step{0}, threads;
+        double startTime, elapsedEquilibriumChecks, elapsedGridUpdates;
         vector<vector<float>> temperatures;
-        int rows, cols, step{0};
-        double equilibriumChecksStart, equilibriumChecksEnd, updatesStart, updatesEnd;
-        double elapsedTimeEquilibriumChecks, elapsedGridUpdates;
     public:
-        Grid(int rows, int cols);
         Grid(int resolution);
-        void  setTemperature(int row, int col, float temperature);
-        float getTemperature(int row, int col) const;
-        void  printGrid() const;
-        void  increaseStep();
-        int   getStep() const;
-        bool  checkEquilibrium() const;
-        void  updateGrid();
-        void  reachEquilibrium();
-        void  printPerformance() const;
+        void   printGrid() const;
+        void   setTemperature(int row, int col, float temperature);
+        float  getTemperature(int row, int col) const;
+        void   setThreads(int threads);
+        int    getThreads() const;
+        void   increaseStep();
+        int    getStep() const;
+        void   startTimer();
+        double getTime() const;
+        bool   checkEquilibrium();
+        void   updateGrid();
+        void   reachEquilibrium();
+        void   isEqual(const Grid& grid);
+        void   printPerformance() const;
 };
 
 #endif
