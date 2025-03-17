@@ -3,49 +3,38 @@
 #include "grid.hpp"
 
 auto main() -> int {
-    // Setting the grid resolution and temperature
-    int resolution = 5;
-    float temperature = 900.0f;
-
-    // Creating the grid
-    Grid grid(resolution);
+    // Setting the grid resolution
+    int   resolution = 1000;
+    Grid  grid(resolution);
 
     // Setting a temperature in the middle of the grid
-    int center = resolution / 2;
-    grid.setTemperature(center, center, temperature);
+    float temperature = 900.0f;
+    int   position = resolution / 2;
+    grid.setTemperature(position, position, temperature);
 
+    // Creating two copies of the grid
     Grid serialized_grid = grid;
     Grid parallelized_grid = grid;
 
-    // Printing the initial grid
-    printf("Initial grid:\n");
-    grid.printGrid();
+    // Getting number of threads for the grids
+    int threads = 1;
+    int max_threads = omp_get_max_threads();
 
-    // Reach for equilibrium through serial updates
-    printf("Updating temperatures through serial updates...\n");
+    // Reach for equilibrium for the first grid
+    serialized_grid.setThreads(threads);
     serialized_grid.reachEquilibrium();
-    printf("Finished.\n");
 
-    // Resetting the grid
-    //printf("Resetting the grid...\n");
-    //grid = Grid(resolution);
-    //grid.setTemperature(center, center, temperature);
+    // Get max number of threads
+    parallelized_grid.setThreads(max_threads);
+    // Reach for equilibrium for the second grid
+    parallelized_grid.reachEquilibrium();
 
-    // Reach for equilibrium through parallel updates
-    //int threads = omp_get_max_threads();
-    //printf("Updating temperatures through parallel updates with %d threads...\n", threads);
-    //grid.reachEquilibrium();
+    // Check if both grids are equal
+    serialized_grid.isEqual(parallelized_grid);
 
-    // Checking if the grids resulted in the same temperature distribution
-    //for (int i = 0; i < resolution; i++) {
-    //    for (int j = 0; j < resolution; j++) {
-    //        if (serialized_grid.getTemperature(i, j) != parallelized_grid.getTemperature(i, j)) {
-    //            break;
-    //        }
-    //    }
-    //}
-
+    // Print the performance of both grids
     serialized_grid.printPerformance();
-    //parallelized_grid.printPerformance();
+    parallelized_grid.printPerformance();
+
     return 0;
 }
