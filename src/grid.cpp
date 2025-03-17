@@ -59,7 +59,7 @@ auto Grid::checkEquilibrium() -> bool {
     int rows_len = rows;
     int cols_len = cols;
     startTimer();
-    #pragma omp parallel for shared(equilibrium) collapse(2)
+    #pragma omp parallel for shared(rows_len,cols_len) collapse(2)
     for (int i = 1; i < rows_len; ++i) {
         for (int j = 1; j < cols_len; ++j) {
             float diff = temperatures[i][j] - temperatures[0][0];
@@ -101,7 +101,7 @@ auto Grid::isEqual(const Grid& grid) -> void {
     int  rows_len = rows;
     int  cols_len = cols;
     startTimer();
-    #pragma omp parallel for shared(rows_len,cols_len,equal) collapse(2)
+    #pragma omp parallel for shared(rows_len,cols_len) collapse(2)
     for (int i = 0; i < rows_len; ++i) {
         for (int j = 0; j < cols_len; ++j) {
             if (temperatures[i][j] != grid.getTemperature(i, j)) {
