@@ -5,7 +5,7 @@
 using namespace std;
 
 #define AMBIENT_TEMPERATURE 300.0f     // Define the ambient temperature of 300 K
-#define GRID_SIZE           0.01f      // Define the grid size of 1 cm
+#define GRID_SIZE           1e-2f      // Define the grid size of 1 cm
 #define MAX_UPDATES         1e4        // Define the maximum number of updates
 #define THERMAL_DIFFUSIVITY 1.22e-3f   // Define the thermal diffusivity for pyrolytic graphite
 #define TIME_STEP           1.0f/30.0f // Define the time step for 15 frames per second
@@ -65,6 +65,11 @@ auto Grid::updateGrid() -> bool {
     vector<vector<float>> newTemperatures = temperatures;
     float tempReference = temperatures[0][0];
     bool  reachedEquilibrium = true;
+    int directions[8][2] = {
+        {-1, -1}, {-1, 0}, {-1, 1},
+        { 0, -1},          { 0, 1},
+        { 1, -1}, { 1, 0}, { 1, 1},
+    };
     startTimer();
     #pragma omp parallel for collapse(2) shared(reachedEquilibrium)
     for (int i = 0; i < rows; ++i) {
@@ -73,38 +78,14 @@ auto Grid::updateGrid() -> bool {
             float neighborTempSum = 0.0f;
             int   neighbors = 0;
 
-            // Checking for all 8 possible neighbors
-            if (i > 0) {
-                neighborTempSum += temperatures[i - 1][j];
-                neighbors++;
-            }
-            if (i < rows - 1) {
-                neighborTempSum += temperatures[i + 1][j];
-                neighbors++;
-            }
-            if (j > 0) {
-                neighborTempSum += temperatures[i][j - 1];
-                neighbors++;
-            }
-            if (j < cols - 1) {
-                neighborTempSum += temperatures[i][j + 1];
-                neighbors++;
-            }
-            if (i > 0 && j > 0) {
-                neighborTempSum += temperatures[i - 1][j - 1];
-                neighbors++;
-            }
-            if (i > 0 && j < cols - 1) {
-                neighborTempSum += temperatures[i - 1][j + 1];
-                neighbors++;
-            }
-            if (i < rows - 1 && j > 0) {
-                neighborTempSum += temperatures[i + 1][j - 1];
-                neighbors++;
-            }
-            if (i < rows - 1 && j < cols - 1) {
-                neighborTempSum += temperatures[i + 1][j + 1];
-                neighbors++;
+            // Check for all 8 possible neighbors
+           for (int k = 0; k < 8; k++) {
+                int new_i = i + directions[k][0];
+                int new_j = j + directions[k][1];
+                if (new_i >= 0 && new_i < rows && new_j >= 0 && new_j < cols) {
+                    neighborTempSum += temperatures[new_i][new_j];
+                    neighbors++;
+                }
             }
 
             // Calculate the new temperature
