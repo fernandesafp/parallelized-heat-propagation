@@ -25,7 +25,7 @@ class Grid {
         bool   updateGrid();
         void   reachEquilibrium();
         void   printPerformance() const;
-        void   printPerformance(double referenceTime) const;
+        void   printPerformance(int referenceThreads, double referenceTime) const;
 };
 
 #endif

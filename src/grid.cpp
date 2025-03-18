@@ -65,6 +65,11 @@ auto Grid::getElapsedTime() const -> double {
     return totalElapsedTime;
 }
 
+// Update the grid with the new temperatures based on the Laplace equation
+// ΔT = α * Δt * ∇²T
+// Where all possible neighbors are considered on 8 directions
+// Equilibrium is reached when the difference between the reference temperature and the
+// current temperature is less than 1 K
 auto Grid::updateGrid() -> bool {
     vector<vector<float>> newTemperatures = temperatures;
     float tempReference = temperatures[0][0];
@@ -112,6 +117,8 @@ auto Grid::updateGrid() -> bool {
     return reachedEquilibrium;
 }
 
+// While the grid has not reached equilibrium and the maximum number of updates has not been
+// reached, update the grid with the new temperatures
 auto Grid::reachEquilibrium() -> void {
     int threads = getThreads();
     printf("Simulating heat transfer with %d thread%s...\n", threads, threads > 1 ? "s" : "");
@@ -131,7 +138,13 @@ auto Grid::printPerformance() const -> void {
     printf("%.2g seconds.\n", totalElapsedTime);
 }
 
-auto Grid::printPerformance(double referenceTime) const -> void {
+// Print the performance of the grid comparing with the previous execution
+auto Grid::printPerformance(int referenceThreads, double referenceTime) const -> void {
     printPerformance();
-    printf("Time improvement: %.0f%%.\n", (referenceTime - totalElapsedTime) / referenceTime * 100.0);
+    float thread_increase = threads / (float)referenceThreads;
+    float speedup = referenceTime / totalElapsedTime;
+    float efficiency = (speedup < 1.0f ? -speedup : speedup) / thread_increase;
+    printf("Thread increase: %.2fx.\n", thread_increase);
+    printf("Speedup:         %.2fx.\n", speedup);
+    printf("Efficiency:      %.0f%%.\n", efficiency * 100);
 }
