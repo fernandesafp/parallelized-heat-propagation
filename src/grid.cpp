@@ -111,7 +111,7 @@ auto Grid::updateGrid() -> bool {
 }
 
 auto Grid::reachEquilibrium() -> void {
-    printf("Simulating heat transfer with %d threads...\n", getThreads());
+    printf("Simulating heat transfer with %d thread%s...\n", getThreads(), getThreads() > 1 ? "s" : "");
     while (!updateGrid() && getStep() < MAX_UPDATES) {
         increaseStep();
     }
@@ -120,7 +120,6 @@ auto Grid::reachEquilibrium() -> void {
     } else {
         printf("Equilibrium reached after %d steps.\n", getStep());
     }
-    printf("Finished.\n");
 }
 
 auto Grid::isEqual(const Grid& grid) -> void {
@@ -142,6 +141,6 @@ auto Grid::isEqual(const Grid& grid) -> void {
 }
 
 auto Grid::printPerformance() const -> void {
-    printf("\nPerformance for %d threads:\n", threads);
+    printf("\nPerformance for %d thread%s:\n", threads, threads > 1 ? "s" : "");
     printf("Elapsed time for temperature updates: %.2g seconds.\n", elapsedGridUpdates);
 }
