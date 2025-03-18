@@ -131,5 +131,5 @@ auto Grid::printPerformance() const -> void {
 
 auto Grid::printPerformance(double referenceTime) const -> void {
     printPerformance();
-    printf("Time gain: %0*.0f%%.\n", 2, (totalElapsedTime - referenceTime) / referenceTime * 100.0);
+    printf("Time gain: %.0f%%.\n", (totalElapsedTime - referenceTime) / referenceTime * 100.0);
 }
