@@ -8,7 +8,7 @@ using namespace std;
 #define GRID_SIZE           1e-2f      // Define the grid size of 1 cm
 #define MAX_UPDATES         1e4        // Define the maximum number of updates
 #define THERMAL_DIFFUSIVITY 1.22e-3f   // Define the thermal diffusivity for pyrolytic graphite
-#define TIME_STEP           1.0f/30.0f // Define the time step for 15 frames per second
+#define TIME_STEP           1.0f/30.0f // Define the time step for 30 frames per second
 
 Grid::Grid(int resolution) : rows(resolution), cols(resolution) {
     printf("Initializing grid with resolution %dx%d.\n", resolution, resolution);
@@ -69,7 +69,7 @@ auto Grid::updateGrid() -> bool {
     vector<vector<float>> newTemperatures = temperatures;
     float tempReference = temperatures[0][0];
     bool  reachedEquilibrium = true;
-    int directions[8][2] = {
+    int   directions[8][2] = {
         {-1, -1}, {-1, 0}, {-1, 1},
         { 0, -1},          { 0, 1},
         { 1, -1}, { 1, 0}, { 1, 1},
@@ -131,5 +131,5 @@ auto Grid::printPerformance() const -> void {
 
 auto Grid::printPerformance(double referenceTime) const -> void {
     printPerformance();
-    printf("Time gain: %.0f%%.\n", (totalElapsedTime - referenceTime) / referenceTime * 100.0);
+    printf("Time improvement: %.0f%%.\n", (referenceTime - totalElapsedTime) / referenceTime * 100.0);
 }
