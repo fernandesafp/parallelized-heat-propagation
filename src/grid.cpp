@@ -4,11 +4,16 @@
 
 using namespace std;
 
-// Define the maximum number of updates
-#define MAX_UPDATES 100000
+#define AMBIENT_TEMPERATURE 300.0f     // Define the ambient temperature of 300 K
+#define GRID_SIZE           0.01f      // Define the grid size of 1 cm
+#define MAX_UPDATES         1e4        // Define the maximum number of updates
+#define THERMAL_DIFFUSIVITY 1.22e-3f   // Define the thermal diffusivity for pyrolytic graphite
+#define TIME_STEP           1.0f/30.0f // Define the time step for 15 frames per second
 
 Grid::Grid(int resolution) : rows(resolution), cols(resolution) {
-    temperatures.resize(resolution, vector<float>(resolution, 0.0f));
+    printf("Initializing grid with resolution %dx%d.\n", resolution, resolution);
+    printf("Setting ambient temperature to %.0f K.\n", AMBIENT_TEMPERATURE);
+    temperatures.resize(resolution, vector<float>(resolution, AMBIENT_TEMPERATURE));
 }
 
 auto Grid::printGrid() const -> void {
@@ -23,6 +28,7 @@ auto Grid::printGrid() const -> void {
 }
 
 auto Grid::setTemperature(int row, int col, float temperature) -> void{
+    printf("Setting temperature at (%d, %d) to %.0f K.\n", row, col, temperature);
     temperatures[row][col] = temperature;
 }
 
@@ -55,44 +61,83 @@ auto Grid::getTime() const -> double {
     return omp_get_wtime() - startTime;
 }
 
-auto Grid::checkEquilibrium() -> bool {
-    int rows_len = rows;
-    int cols_len = cols;
-    startTimer();
-    #pragma omp parallel for shared(rows_len,cols_len) collapse(2)
-    for (int i = 1; i < rows_len; ++i) {
-        for (int j = 1; j < cols_len; ++j) {
-            float diff = temperatures[i][j] - temperatures[0][0];
-            if (diff > 0.1f || diff < -0.1f) {
-                rows_len = -1;
-                cols_len = -1;
-            }
-        }
-    }
-    elapsedEquilibriumChecks += getTime();
-    return rows_len == rows;
-}
-
-auto Grid::updateGrid() -> void {
+auto Grid::updateGrid() -> bool {
     vector<vector<float>> newTemperatures = temperatures;
+    float tempReference = temperatures[0][0];
+    bool  reachedEquilibrium = true;
     startTimer();
-    #pragma omp parallel for collapse(2)
-    for (int i = 1; i < rows - 1; ++i) {
-        for (int j = 1; j < cols - 1; ++j) {
-            if (newTemperatures[i][j] != 0.0f) {
-                newTemperatures[i][j] -= 1.0f;
+    #pragma omp parallel for collapse(2) shared(reachedEquilibrium)
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            // Initialize the sum of the temperatures of the neighbors
+            float neighborTempSum = 0.0f;
+            int   neighbors = 0;
+
+            // Checking for all 8 possible neighbors
+            if (i > 0) {
+                neighborTempSum += temperatures[i - 1][j];
+                neighbors++;
             }
-        }
+            if (i < rows - 1) {
+                neighborTempSum += temperatures[i + 1][j];
+                neighbors++;
+            }
+            if (j > 0) {
+                neighborTempSum += temperatures[i][j - 1];
+                neighbors++;
+            }
+            if (j < cols - 1) {
+                neighborTempSum += temperatures[i][j + 1];
+                neighbors++;
+            }
+            if (i > 0 && j > 0) {
+                neighborTempSum += temperatures[i - 1][j - 1];
+                neighbors++;
+            }
+            if (i > 0 && j < cols - 1) {
+                neighborTempSum += temperatures[i - 1][j + 1];
+                neighbors++;
+            }
+            if (i < rows - 1 && j > 0) {
+                neighborTempSum += temperatures[i + 1][j - 1];
+                neighbors++;
+            }
+            if (i < rows - 1 && j < cols - 1) {
+                neighborTempSum += temperatures[i + 1][j + 1];
+                neighbors++;
+            }
+
+            // Calculate the new temperature
+            float laplacian = (neighborTempSum - neighbors * temperatures[i][j]) / (GRID_SIZE * GRID_SIZE);
+
+            // Update the temperature
+            newTemperatures[i][j] = temperatures[i][j] + THERMAL_DIFFUSIVITY * TIME_STEP * laplacian;
+
+            // Check if the grid has reached equilibrium
+            float referenceDifference = abs(tempReference - temperatures[i][j]);
+            if (referenceDifference > 1.0f) {
+                reachedEquilibrium = false;
+            }
+      }
     }
     elapsedGridUpdates += getTime();
-    temperatures = newTemperatures;
+    if (reachedEquilibrium) {
+        return true;
+    } else {
+        temperatures = newTemperatures;
+        return false;
+    }
 }
 
 auto Grid::reachEquilibrium() -> void {
-    printf("Reaching equilibrium with %d threads...\n", getThreads());
-    while (!checkEquilibrium() && getStep() < MAX_UPDATES) {
-        updateGrid();
+    printf("Simulating heat transfer with %d threads...\n", getThreads());
+    while (!updateGrid() && getStep() < MAX_UPDATES) {
         increaseStep();
+    }
+    if (getStep() == MAX_UPDATES) {
+        printf("Maximum number of updates reached (%d).\n", MAX_UPDATES);
+    } else {
+        printf("Equilibrium reached after %d steps.\n", getStep());
     }
     printf("Finished.\n");
 }
@@ -116,14 +161,6 @@ auto Grid::isEqual(const Grid& grid) -> void {
 }
 
 auto Grid::printPerformance() const -> void {
-    printf("\nPerformance:\n");
-    printf("Threads used: %d.\n", threads);
-    printf("Resolution: %dx%d.\n", rows, cols);
-    if (getStep() == MAX_UPDATES) {
-        printf("Maximum number of updates reached of %d.\n", MAX_UPDATES);
-    } else {
-        printf("Equilibrium reached after %d steps.\n", getStep());
-    }
-    printf("Elapsed time for equilibrium checks:  %.2g seconds.\n", elapsedEquilibriumChecks);
+    printf("\nPerformance for %d threads:\n", threads);
     printf("Elapsed time for temperature updates: %.2g seconds.\n", elapsedGridUpdates);
 }
