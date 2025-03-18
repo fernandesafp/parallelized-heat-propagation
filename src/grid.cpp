@@ -57,8 +57,12 @@ auto Grid::startTimer() -> void {
     startTime = omp_get_wtime();
 }
 
-auto Grid::getTime() const -> double {
+auto Grid::stopTimer() const -> double {
     return omp_get_wtime() - startTime;
+}
+
+auto Grid::getElapsedTime() const -> double {
+    return totalElapsedTime;
 }
 
 auto Grid::updateGrid() -> bool {
@@ -101,20 +105,18 @@ auto Grid::updateGrid() -> bool {
             }
       }
     }
-    elapsedGridUpdates += getTime();
-    if (reachedEquilibrium) {
-        return true;
-    } else {
-        temperatures = newTemperatures;
-        return false;
-    }
+    totalElapsedTime += stopTimer();
+    temperatures = newTemperatures;
+    return reachedEquilibrium;
 }
 
 auto Grid::reachEquilibrium() -> void {
-    printf("Simulating heat transfer with %d thread%s...\n", getThreads(), getThreads() > 1 ? "s" : "");
+    int threads = getThreads();
+    printf("Simulating heat transfer with %d thread%s...\n", threads, threads > 1 ? "s" : "");
     while (!updateGrid() && getStep() < MAX_UPDATES) {
         increaseStep();
     }
+    if (threads > 1) return;
     if (getStep() == MAX_UPDATES) {
         printf("Maximum number of updates reached (%d).\n", MAX_UPDATES);
     } else {
@@ -122,25 +124,12 @@ auto Grid::reachEquilibrium() -> void {
     }
 }
 
-auto Grid::isEqual(const Grid& grid) -> void {
-    int  rows_len = rows;
-    int  cols_len = cols;
-    startTimer();
-    #pragma omp parallel for shared(rows_len,cols_len) collapse(2)
-    for (int i = 0; i < rows_len; ++i) {
-        for (int j = 0; j < cols_len; ++j) {
-            if (temperatures[i][j] != grid.getTemperature(i, j)) {
-                rows_len = -1;
-                cols_len = -1;
-            }
-        }
-    }
-    getTime();
-    printf("Grids are %s.\n", rows_len == rows ? "equal" : "different");
-    printf("Elapsed time for comparison: %.2g seconds.\n", getTime());
+auto Grid::printPerformance() const -> void {
+    printf("Elapsed time for %d thread%s: ", threads, threads > 1 ? "s" : "");
+    printf("%.2g seconds.\n", totalElapsedTime);
 }
 
-auto Grid::printPerformance() const -> void {
-    printf("\nPerformance for %d thread%s:\n", threads, threads > 1 ? "s" : "");
-    printf("Elapsed time for temperature updates: %.2g seconds.\n", elapsedGridUpdates);
+auto Grid::printPerformance(double referenceTime) const -> void {
+    printPerformance();
+    printf("Time gain: %0*.0f%%.\n", 2, (totalElapsedTime - referenceTime) / referenceTime * 100.0);
 }

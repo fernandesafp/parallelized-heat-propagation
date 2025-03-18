@@ -23,18 +23,21 @@ auto main() -> int {
     // Reach for equilibrium for the first grid
     serialized_grid.setThreads(threads);
     serialized_grid.reachEquilibrium();
-
-    // Get max number of threads
-    parallelized_grid.setThreads(max_threads);
-    // Reach for equilibrium for the second grid
-    parallelized_grid.reachEquilibrium();
-
-    // Check if both grids are equal
-    serialized_grid.isEqual(parallelized_grid);
-
-    // Print the performance of both grids
     serialized_grid.printPerformance();
-    parallelized_grid.printPerformance();
+
+    // Go over increasing number of threads for the parallelized grid
+    do {
+        threads *= 2;
+        if (threads > max_threads) {
+            threads = max_threads;
+        }
+        parallelized_grid.setThreads(threads);
+        // Reach for equilibrium for the parallelized grid
+        parallelized_grid.reachEquilibrium();
+        parallelized_grid.printPerformance(serialized_grid.getElapsedTime());
+        // Reset the parallelized grid
+        parallelized_grid = grid;
+    } while (threads < max_threads);
 
     return 0;
 }

@@ -8,7 +8,7 @@ using namespace std;
 class Grid {
     private:
         int    rows, cols, step{0}, threads;
-        double startTime, elapsedGridUpdates;
+        double startTime, totalElapsedTime;
         vector<vector<float>> temperatures;
     public:
         Grid(int resolution);
@@ -20,11 +20,12 @@ class Grid {
         void   increaseStep();
         int    getStep() const;
         void   startTimer();
-        double getTime() const;
+        double stopTimer() const;
+        double getElapsedTime() const;
         bool   updateGrid();
         void   reachEquilibrium();
-        void   isEqual(const Grid& grid);
         void   printPerformance() const;
+        void   printPerformance(double referenceTime) const;
 };
 
 #endif
