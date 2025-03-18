@@ -5,39 +5,38 @@
 auto main() -> int {
     // Setting the grid resolution
     int   resolution = 1000;
-    Grid  grid(resolution);
+    Grid  initial_grid(resolution);
 
     // Setting a temperature in the middle of the grid
     float temperature = 900.0f;
     int   position = resolution / 2;
-    grid.setTemperature(position, position, temperature);
-
-    // Creating two copies of the grid
-    Grid serialized_grid = grid;
-    Grid parallelized_grid = grid;
+    initial_grid.setTemperature(position, position, temperature);
 
     // Getting number of threads for the grids
-    int threads = 1;
-    int max_threads = omp_get_max_threads();
+    int    threads[] = {1, 2, 4, 8, 12, 16};
+    int    max_threads = omp_get_max_threads();
+    int    referenceThreads = -1;
+    double referenceTime = -1.0f;
 
-    // Reach for equilibrium for the first grid
-    serialized_grid.setThreads(threads);
-    serialized_grid.reachEquilibrium();
-    serialized_grid.printPerformance();
-
-    // Go over increasing number of threads for the parallelized grid
-    do {
-        threads *= 2;
-        if (threads > max_threads) {
-            threads = max_threads;
+    // Iterate over the number of threads
+    for (int t : threads) {
+        if (t > max_threads) {
+            continue;
         }
-        parallelized_grid.setThreads(threads);
+        Grid grid = initial_grid;
+        grid.setThreads(t);
         // Reach for equilibrium for the parallelized grid
-        parallelized_grid.reachEquilibrium();
-        parallelized_grid.printPerformance(serialized_grid.getElapsedTime());
-        // Reset the parallelized grid
-        parallelized_grid = grid;
-    } while (threads < max_threads);
+        grid.reachEquilibrium();
+        // Print the performance of the grid
+        if (t == 1) {
+            grid.printPerformance();
+        } else {
+            // Print the performance of the grid comparing with the previous one
+            grid.printPerformance(referenceThreads, referenceTime);
+        }
+        referenceThreads = grid.getThreads();
+        referenceTime = grid.getElapsedTime();
+    }
 
     return 0;
 }
