@@ -99,11 +99,13 @@ auto Grid::updateGrid() -> bool {
             newTemperatures[i][j] = temperatures[i][j] + THERMAL_DIFFUSIVITY * TIME_STEP * laplacian;
 
             // Check if the grid has reached equilibrium
-            float referenceDifference = abs(tempReference - temperatures[i][j]);
-            if (referenceDifference > 1.0f) {
-                reachedEquilibrium = false;
+            if (reachedEquilibrium) {
+                float referenceDifference = abs(tempReference - temperatures[i][j]);
+                if (referenceDifference > 1.0f) {
+                    reachedEquilibrium = false;
+                }
             }
-      }
+        }
     }
     totalElapsedTime += stopTimer();
     temperatures = newTemperatures;
