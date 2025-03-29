@@ -1,2 +1,2 @@
-# parallel-heat-propagation
+# parallelized-heat-propagation
 Heat propagation simulation with C++ using OpenMP
