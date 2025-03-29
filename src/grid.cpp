@@ -133,14 +133,13 @@ auto Grid::reachEquilibrium() -> void {
     }
 }
 
-auto Grid::printPerformance() const -> void {
-    printf("Elapsed time for %d thread%s: ", threads, threads > 1 ? "s" : "");
-    printf("%.2g seconds.\n", totalElapsedTime);
-}
-
 // Print the performance of the grid comparing with the previous execution
 auto Grid::printPerformance(int referenceThreads, double referenceTime) const -> void {
-    printPerformance();
+    printf("Elapsed time for %d thread%s: ", threads, threads > 1 ? "s" : "");
+    printf("%.2g seconds.\n", totalElapsedTime);
+    if (referenceThreads == -1) {
+        return;
+    }
     float thread_increase = threads / (float)referenceThreads;
     float speedup = referenceTime / totalElapsedTime;
     float efficiency = (speedup < 1.0f ? -speedup : speedup) / thread_increase;

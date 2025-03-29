@@ -28,12 +28,8 @@ auto main() -> int {
         // Reach for equilibrium for the parallelized grid
         grid.reachEquilibrium();
         // Print the performance of the grid
-        if (t == 1) {
-            grid.printPerformance();
-        } else {
-            // Print the performance of the grid comparing with the previous one
-            grid.printPerformance(referenceThreads, referenceTime);
-        }
+        grid.printPerformance(referenceThreads, referenceTime);
+        // Store the reference values for the next iteration
         referenceThreads = grid.getThreads();
         referenceTime = grid.getElapsedTime();
     }
